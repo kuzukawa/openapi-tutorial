@@ -783,3 +783,188 @@ components:
 ## Prismを利用したモックサーバを構築する
 [Prism](https://stoplight.io/open-source/prism)はオープンソースのHTTPモックサーバ。
 
+### インストール・セットアップ
+以下のコマンドでPrismをインストールする。
+```shell
+npm install --save-dev @stoplight/prism-cli
+```
+次に`package.json`に実行のためのコマンドを追加する。
+```json
+  "scripts": {
+    "run:mockserver": "prism mock ./tutorial.yaml"
+  },
+```
+以下のコマンドを実行すると、OpenAPI定義に従ったMockサーバが起動する。
+```shell
+npm run run:mockserver
+```
+この状態で以下のコマンドを実行するとレスポンスが正しく取得できる。なお、以下コマンドで[httpie](https://httpie.io)を利用。
+```shell
+# GET /artists
+http -a user:pass http://localhost:4010/artists
+
+# GET /artists/1
+http -a user:pass http://localhost:4010/artists/1
+
+# POST /artists
+http -a user:pass POST http://localhost:4010/artists artist_name=kuzukawa artist_genre=rock albums_recorded:=5 username=kuzukawa
+```
+
+### テストデータを改善する
+今の状態だと以下のような適当な値が返却されてしまう。
+```shell
+❯ http -a user:pass http://localhost:4010/artists
+HTTP/1.1 200 OK
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Headers: *
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: *
+Connection: keep-alive
+Content-Length: 90
+Content-type: application/json
+Date: Thu, 01 Feb 2024 11:58:52 GMT
+Keep-Alive: timeout=5
+
+[
+    {
+        "albums_recorded": 0,
+        "artist_genre": "string",
+        "artist_name": "string",
+        "username": "string"
+    }
+]
+```
+
+Mockサーバ経由であっても適切な値を返却するよう、OpenAPI定義を修正する。`example`を利用することによりテストデータの値を定義することができる。
+
+```yaml
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Simple Artist API
+  description: A simple API to illustrate OpenAPIとは何か
+
+servers:
+  - url: https://example.io/v1
+
+security:
+  - BasicAuth: []
+
+paths:
+  /artists:
+    get:
+      description: Returns a list of artists
+      parameters:
+        - name: limit
+          in: query
+          description: Limits the number of items on a page
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          description: Specifies the page number of the artist to be displayed
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successfully returned a list of artists
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Artist'
+        '400':
+          $ref: '#/components/responses/400Error'
+    post:
+      description: Lets a user post a new artist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Artist'
+      responses:
+        '200':
+          description: Successfully created a new artist
+        '400':
+          $ref: '#/components/responses/400Error'
+  /artists/{username}:
+    get:
+      description: Obtain infomation about an artist from his or her unique username
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully returned an artist
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  artist_name:
+                    type: string
+                  artist_genre:
+                    type: string
+                  albums_recorded:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/400Error'
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+
+  schemas:
+    Artist:
+      type: object
+      required:
+        - username
+      properties:
+        artist_name:
+          type: string
+        artist_genre:
+          type: string
+        albums_recorded:
+          type: integer
+        username:
+          type: string
+      # --------------- Added lines -------------------
+      example:
+        artist_name: 'kuzukawa'
+        artist_genre: 'rock'
+        albums_recorded: 5
+        username: 'kuzukawa'
+      # --------------- /Added lines ------------------
+
+  parameters:
+    PageLimit:
+      name: limit
+      in: query
+      description: Limits the number of items on a page
+      schema:
+        type: integer
+
+    PageOffset:
+      name: offset
+      in: query
+      description: Specifies the page number of the artists to be displayed
+      schema:
+        type: integer
+
+  responses:
+    400Error:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+```

@@ -1,0 +1,16 @@
+{
+  "name": "openapi-tutorial",
+  "version": "1.0.0",
+  "description": "OpenAPI 3.0 Tutorialを使った開発環境の構築",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "run:mockserver": "prism mock ./tutorial.yaml"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@stoplight/prism-cli": "^5.5.3"
+  }
+}

@@ -35,9 +35,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Artist'
         '400':
-          # --------------- Added lines -------------------
           $ref: '#/components/responses/400Error'
-          # --------------- /Added lines ------------------
     post:
       description: Lets a user post a new artist
       requestBody:
@@ -50,9 +48,7 @@ paths:
         '200':
           description: Successfully created a new artist
         '400':
-          # --------------- Added lines -------------------
           $ref: '#/components/responses/400Error'
-          # --------------- /Added lines ------------------
   /artists/{username}:
     get:
       description: Obtain infomation about an artist from his or her unique username
@@ -77,9 +73,7 @@ paths:
                   albums_recorded:
                     type: integer
         '400':
-          # --------------- Added lines -------------------
           $ref: '#/components/responses/400Error'
-          # --------------- /Added lines ------------------
 components:
   securitySchemes:
     BasicAuth:
@@ -100,8 +94,12 @@ components:
           type: integer
         username:
           type: string
+      example:
+        artist_name: 'kuzukawa'
+        artist_genre: 'rock'
+        albums_recorded: 5
+        username: 'kuzukawa'
 
-  # --------------- Added lines -------------------
   parameters:
     PageLimit:
       name: limit
@@ -127,4 +125,3 @@ components:
             properties:
               message:
                 type: string
-  # --------------- /Added lines ------------------

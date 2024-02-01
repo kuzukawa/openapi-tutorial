@@ -971,12 +971,56 @@ components:
 ここまでで、Prismを利用したMockサーバ上での動作までができるようになった。
 
 ## Spring Bootの開発環境を用意する
-まずは[Spring initializr](https://start.spring.io/#!type=gradle-project&language=java&platformVersion=3.2.2&packaging=jar&jvmVersion=21&groupId=net.kuzukawa.api&artifactId=artist&name=artist&description=Artist%20API%20project%20for%20Spring%20Boot&packageName=net.kuzukawa.api.artist)で雛形を作成する。zipファイルをダウンロードし、`backend`ディレクトリを用意して資材を展開する。
 
+### 環境の導入と疎通確認
+まずは[Spring initializr](https://start.spring.io/#!type=gradle-project&language=java&platformVersion=3.2.2&packaging=jar&jvmVersion=21&groupId=net.kuzukawa.api&artifactId=artist&name=artist&description=Artist%20API%20project%20for%20Spring%20Boot&packageName=net.kuzukawa.api.artist)で雛形を作成する。zipファイルをダウンロードし、`backend`ディレクトリを用意して資材を展開する。次に、最低限動くかを確認するために手で`Controller`を作成し、起動確認を行う。
 
+#### `build.gradle`を修正して依存関係を追加する
+初期状態では最低限の依存関係しか定義していないため、Webアプリケーションの開発ができない。`build.gradle`に以下の定義を追加し、Webアプリケーションの開発ができるよう、依存関係を追加する。
 
-## OpenAPI Generator
+```gradle
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter'
+  // ----------- Add line --------------
+  implementation 'org.springframework.boot:spring-boot-starter-web'
+  // ----------- /Add line -------------
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+```
 
+次に、疎通用の`@RestController`として`net.kuzukawa.api.artist.HelloController.java`を作成する。
+```java
+package net.kuzukawa.api.artist;
 
-#### メモ
-* [OpenAPI Generatorに適したOpenAPIの書き方](https://techblog.zozo.com/entry/how-to-write-openapi-for-openapi-generator)
+import org.springframework.boot.autoconfigure.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@EnableAutoConfiguration
+public class HelloController {
+  @GetMapping("/")
+  String home(){
+    return "Hello world";
+  }
+}
+```
+この状態で以下のコマンドを実行してSpringBootアプリケーションを起動して疎通確認を行う。
+* サーバ起動
+```shell
+./gradlew bootRun
+```
+* 疎通確認
+```shell
+❯ http http://localhost:8080
+HTTP/1.1 200 
+Connection: keep-alive
+Content-Length: 11
+Content-Type: text/plain;charset=UTF-8
+Date: Thu, 01 Feb 2024 14:13:52 GMT
+Keep-Alive: timeout=60
+
+Hello world
+```
+
+ここまでで、SpringBootの初期セットアップおよび疎通確認が完了できた。

@@ -780,6 +780,22 @@ components:
 * [OpenAPI Specification](https://swagger.io/specification/)
 * [Basic Structure](https://swagger.io/docs/specification/basic-structure/)
 
+## HTML文書を生成する
+今のままでは非エンジニアの方や文書としての成果物を他者と共有できないため、HTML文書を生成できるようにしていく。
+
+### セットアップ
+[redoc](https://github.com/Redocly/redoc)を導入する。
+```shell
+npm install -D redoc-cli
+```
+
+### HTML出力
+以下のコマンドを実行してHTMLファイルを生成する。以下の例では`tutorial.html`としてHTML文書が生成される。
+```shell
+npx redoc-cli bundle tutorial.yaml --output tutorial.html
+```
+
+
 ## Prismを利用したモックサーバを構築する
 [Prism](https://stoplight.io/open-source/prism)はオープンソースのHTTPモックサーバ。
 

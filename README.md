@@ -1,6 +1,6 @@
-# OpenAPI 3.0 Tutorial をベースに開発環境を整える
+# OpenAPI 3.0 Tutorial をベースにSpring Bootでの開発環境を整える
 
-[OpenAPI 3.0 Tutorial](https://support.smartbear.com/swaggerhub/docs/en/get-started/openapi-3-0-tutorial.html)を触って、OpenAPIによる書き方を勉強します。以降では、チュートリアルサイトに記載されている情報をまとめていく。
+[OpenAPI 3.0 Tutorial](https://support.smartbear.com/swaggerhub/docs/en/get-started/openapi-3-0-tutorial.html)を触って、OpenAPIによる書き方を勉強しよう。以降では、チュートリアルサイトに記載されている情報をまとめていく。最終的にはSpring Boot上でAPIのエンドポイントを開発できるようになるまでを目指す。
 
 ## 前書き
 
@@ -43,7 +43,7 @@ OpenAPI Specificationでは以下の3つのメインセクションがある。�
   * Responses
   * Other components
 
-## チュートリアルに従って書いてみる。
+## OpenAPIチュートリアルに従って書いてみる。
 
 ### 作るAPIの概要
 音楽のレコードレーベルのためのAPIを作る。以下の項目を持つアーティストのレコードを有する。
@@ -968,3 +968,15 @@ components:
               message:
                 type: string
 ```
+ここまでで、Prismを利用したMockサーバ上での動作までができるようになった。
+
+## Spring Bootの開発環境を用意する
+まずは[Spring initializr](https://start.spring.io/#!type=gradle-project&language=java&platformVersion=3.2.2&packaging=jar&jvmVersion=21&groupId=net.kuzukawa.api&artifactId=artist&name=artist&description=Artist%20API%20project%20for%20Spring%20Boot&packageName=net.kuzukawa.api.artist)で雛形を作成する。zipファイルをダウンロードし、`backend`ディレクトリを用意して資材を展開する。
+
+
+
+## OpenAPI Generator
+
+
+#### メモ
+* [OpenAPI Generatorに適したOpenAPIの書き方](https://techblog.zozo.com/entry/how-to-write-openapi-for-openapi-generator)

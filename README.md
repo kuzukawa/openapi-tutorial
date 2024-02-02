@@ -928,6 +928,12 @@ paths:
                     type: string
                   albums_recorded:
                     type: integer
+                example:
+                  # ------ Added lines ------
+                  artist_name: 'yamada'
+                  artist_genre: 'pop'
+                  albums_recorded: 989
+                  # ------ /Added lines -----
         '400':
           $ref: '#/components/responses/400Error'
 components:

@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.2.2'
 	id 'io.spring.dependency-management' version '1.1.4'
+	id 'org.openapi.generator' version '7.2.0'
 }
 
 group = 'net.kuzukawa.api'
@@ -18,9 +19,53 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter'
   implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.data:spring-data-commons'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+	implementation 'com.google.code.findbugs:jsr305:3.0.2'
+	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+	implementation 'org.openapitools:jackson-databind-nullable:0.2.6'
+
+  implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
   testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+openApiGenerate {
+	generatorName = "spring"
+	//inputSpec = "$rootDir/specs/petstore.yaml".toString()
+	inputSpec = "../tutorial.yaml".toString()
+	outputDir = layout.buildDirectory.dir("generated").get().asFile.path
+	apiPackage = "net.kuzukawa.api.artist.api"
+	invokerPackage = "net.kuzukawa.api.artist.invoker"
+	modelPackage = "net.kuzukawa.api.artist.model"
+	generateModelTests = false
+	generateApiTests = false
+	generateModelDocumentation = false
+	generateApiDocumentation = false
+	// https://openapi-generator.tech/docs/generators/spring
+	configOptions = [
+			dataLibrary          : "java8",
+			documentationProvider: "springdoc",
+			interfaceOnly : "true",
+			delegatePattern : "false",
+			skipDefaultInterface : "true",
+			useSpringBoot3 : "true",
+			useJakartaEe : "true",
+	]
+}
+
+compileJava.dependsOn tasks.openApiGenerate
+
+sourceSets {
+	main {
+		java {
+			srcDir "${openApiGenerate.outputDir.get()}/src/main/java"
+		}
+	}
+}
+

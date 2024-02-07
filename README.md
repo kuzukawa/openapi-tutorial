@@ -990,7 +990,7 @@ components:
               message:
                 type: string
 ```
-ここまでで、Prismを利用したMockサーバ上での動作までができるようになった。
+ここまでで、Prismを利用したMockサーバ上での動作までができるようになった。この先、フロントエンド開発を進めていくようであれば以降の章は確認不要。以降では、Spring Bootを利用してバックエンドを実装していく。
 
 ## Spring Bootの開発環境を用意する
 
@@ -1046,3 +1046,289 @@ Hello world
 ```
 
 ここまでで、SpringBootの初期セットアップおよび疎通確認が完了できた。
+
+## OpenAPI Generatorを利用したAPIエンドポイントのコード自動生成
+OpenAPI Generatorを利用してSpring Boot用のAPIエンドポイントのコードを生成してみる。
+
+### Gradleのセットアップ
+[OpenAPI Generator Gradle Plugin](https://github.com/OpenAPITools/openapi-generator/tree/master/modules/openapi-generator-gradle-plugin)を適用する。`build.gradle`にpluginを追加する。
+
+```gradle
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.2.2'
+	id 'io.spring.dependency-management' version '1.1.4'
+  // --------------- Added lines -------------------
+	id 'org.openapi.generator' version '7.2.0'
+  // --------------- /Added lines ------------------
+}
+```
+
+### 自動生成される資産の取り扱い
+自動生成される資産はGradleのビルドディレクトリとする。
+* ビルドディレクトリは`.gitignore`対象とするためリポジトリの管理対象外となる
+* 自動生成されるファイルは手動での改変は許可してはならない
+* 自動生成される資産は`build/generated`以下とする
+* `interface`のみを生成することも`Controller`も生成することもできる(Generation Gapパターン)
+
+#### Generation Gapパターンに関して
+インターフェイスだけ生成するやり方と`Controller`も自動生成してしまいその具体処理をサービスとして移譲する、という方法がある。Generation Gapパターンはコードを自動生成する前提のデザインパターンだが、自動生成した資産を手動で修正してしまうと、再度自動生成する必要がある場合に手動修正した部分が失われてしまい、使いづらい。Generation Gapパターンでは継承を使ってその問題を解決する。簡単に整理すると以下の通り。
+* 自動生成時はスーパークラスのコードを生成
+* 開発者はそのサブクラスだけを実装
+* インスタンス化するのはサブクラスだけ
+* サブクラスではスーパークラスのメソッドを継承したり、オーバーライドしたりする
+* 自動生成されるコード側ではサブクラスから使うインターフェイスは変更しない
+* 自動生成されるコード側ではTemplate Methodの部分も変えない
+
+##### 参考リンク
+* 参考：[Generation Gapパターン](https://www.hyuki.com/dp/dpinfo.html#GenerationGap)
+* 参考：[OpenAPI Generatorを使ったコードの自動生成とインターフェイスの守り方](https://zenn.dev/angelica/articles/3b7ac906f73638)
+
+### `gradle.build`に自動生成の設定を追加
+```gradle
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.2.2'
+	id 'io.spring.dependency-management' version '1.1.4'
+	id 'org.openapi.generator' version '7.2.0'
+}
+
+group = 'net.kuzukawa.api'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	sourceCompatibility = '21'
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter'
+  implementation 'org.springframework.boot:spring-boot-starter-web'
+  // ----------------- Added lines --------------------
+	implementation 'org.springframework.data:spring-data-commons'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+	implementation 'com.google.code.findbugs:jsr305:3.0.2'
+	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+	implementation 'org.openapitools:jackson-databind-nullable:0.2.6'
+
+  implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
+  // ----------------- /Added lines -------------------
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+// ----------------- Added lines --------------------
+openApiGenerate {
+	generatorName = "spring"
+	//inputSpec = "$rootDir/specs/petstore.yaml".toString()
+	inputSpec = "../tutorial.yaml".toString()
+	outputDir = layout.buildDirectory.dir("generated").get().asFile.path
+	apiPackage = "net.kuzukawa.api.artist.api"
+	invokerPackage = "net.kuzukawa.api.artist.invoker"
+	modelPackage = "net.kuzukawa.api.artist.model"
+	generateModelTests = false
+	generateApiTests = false
+	generateModelDocumentation = false
+	generateApiDocumentation = false
+	// https://openapi-generator.tech/docs/generators/spring
+	configOptions = [
+			dataLibrary          : "java8",
+			documentationProvider: "springdoc",
+			interfaceOnly : "true",　　　　  // Generation Gapパターン利用のための設定(左記はinterface onlyの設定)
+			delegatePattern : "false",　　　// Generation Gapパターン利用のための設定(左記はinterface onlyの設定)
+			skipDefaultInterface : "true",
+			useSpringBoot3 : "true",
+			useJakartaEe : "true",
+	]
+}
+
+compileJava.dependsOn tasks.openApiGenerate
+
+sourceSets {
+	main {
+		java {
+			srcDir "${openApiGenerate.outputDir.get()}/src/main/java"
+		}
+	}
+}
+// ----------------- /Added lines -------------------
+```
+
+### 自動生成＆ビルド
+以下のコマンドを実行して自動生成された資産のビルドを行う。以下のコマンドを実行してエラーが発生なければ、OpenAPI Generatorを利用した資産の自動生成・ビルドは成功している。
+
+```shell
+# 自動生成
+./gradlew openApiGenerate
+
+# ビルド
+./gradlew build
+```
+
+### `OperationId`を定義する
+今の定義だと、各エンドポイントに対応するメソッド名が以下のように自動生成されるため、可読性に懸念がある。以下はGradle実行時の警告メッセージ。
+
+```shell
+Empty operationId found for path: GET /artists. Renamed to auto-generated operationId: artistsGET
+Empty operationId found for path: POST /artists. Renamed to auto-generated operationId: artistsPOST
+Empty operationId found for path: GET /artists/{username}. Renamed to auto-generated operationId: artistsUsernameGET
+Empty operationId found for path: get /artists. Renamed to auto-generated operationId: artistsGet
+Empty operationId found for path: post /artists. Renamed to auto-generated operationId: artistsPost
+Empty operationId found for path: get /artists/{username}. Renamed to auto-generated operationId: artistsUsernameGet
+```
+
+OpenAPI定義を修正して適切なメソッド名で資産が生成されるように修正する。
+
+```yaml
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Simple Artist API
+  description: A simple API to illustrate OpenAPIとは何か
+
+servers:
+  - url: https://example.io/v1
+
+security:
+  - BasicAuth: []
+
+paths:
+  /artists:
+    get:
+      description: Returns a list of artists
+      # -------------- Added lines ----------------
+      operationId: getArtists
+      # -------------- /Added lines ---------------
+      parameters:
+        - name: limit
+          in: query
+          description: Limits the number of items on a page
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          description: Specifies the page number of the artist to be displayed
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successfully returned a list of artists
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Artist'
+        '400':
+          $ref: '#/components/responses/400Error'
+    post:
+      description: Lets a user post a new artist
+      # -------------- Added lines ----------------
+      operationId: registArtist
+      # -------------- /Added lines ---------------
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Artist'
+      responses:
+        '200':
+          description: Successfully created a new artist
+        '400':
+          $ref: '#/components/responses/400Error'
+  /artists/{username}:
+    get:
+      description: Obtain infomation about an artist from his or her unique username
+      # -------------- Added lines ----------------
+      operationId: getArtist
+      # -------------- /Added lines ---------------
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully returned an artist
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  artist_name:
+                    type: string
+                  artist_genre:
+                    type: string
+                  albums_recorded:
+                    type: integer
+                example:
+                  artist_name: 'yamada'
+                  artist_genre: 'pop'
+                  albums_recorded: 989
+        '400':
+          $ref: '#/components/responses/400Error'
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+
+  schemas:
+    Artist:
+      type: object
+      required:
+        - username
+      properties:
+        artist_name:
+          type: string
+        artist_genre:
+          type: string
+        albums_recorded:
+          type: integer
+        username:
+          type: string
+      example:
+        artist_name: 'kuzukawa'
+        artist_genre: 'rock'
+        albums_recorded: 5
+        username: 'kuzukawa'
+
+  parameters:
+    PageLimit:
+      name: limit
+      in: query
+      description: Limits the number of items on a page
+      schema:
+        type: integer
+
+    PageOffset:
+      name: offset
+      in: query
+      description: Specifies the page number of the artists to be displayed
+      schema:
+        type: integer
+
+  responses:
+    400Error:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+```
+
+##### 参考リンク
+* [OpenAPI Generatorに適したOpenAPIの書き方](https://techblog.zozo.com/entry/how-to-write-openapi-for-openapi-generator)

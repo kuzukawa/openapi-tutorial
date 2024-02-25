@@ -1370,5 +1370,171 @@ dependencies {
 ```
 
 
+
+### APIのエンドポイントを実装する
+
+とりあえず、Interface OnlyパターンでAPIのエンドポイントを実装してみよう。自動生成された`ArtistsApi`を継承した`@RestController`を実装すれば良い。ここでは、`net.kuzukawa.api.artist.controller.ArtistApiController.java`を新規作成する。なお、以下は疎通確認用のサンプルであるため、データは全てハードコーディングしている。
+
+```java
+package net.kuzukawa.api.artist.controller;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.validation.Valid;
+import net.kuzukawa.api.artist.api.ArtistsApi;
+import net.kuzukawa.api.artist.model.Artist;
+import net.kuzukawa.api.artist.model.GetArtistByUsername200Response;
+
+@RestController
+public class ArtistApiController implements ArtistsApi {
+  @Override
+  public ResponseEntity<GetArtistByUsername200Response> getArtistByUsername(String username) {
+    GetArtistByUsername200Response response = new GetArtistByUsername200Response()
+      .artistName("test musician1")
+      .artistGenre("rock")
+      .albumsRecorded(4);
+
+      return new ResponseEntity<>(
+        response,
+        HttpStatus.OK
+      );
+  }
+
+  @Override
+  public ResponseEntity<List<Artist>> getArtists(@Valid Integer limit, @Valid Integer offset) {
+    List<Artist> response = new ArrayList<Artist>();
+    response.add(new Artist()
+      .artistName("List Musician 1")
+      .artistGenre("rock")
+      .albumsRecorded(1)
+      .username("List Musician 1"));
+
+      response.add(new Artist()
+      .artistName("List Musician 2")
+      .artistGenre("jazz")
+      .albumsRecorded(2)
+      .username("List Musician 2"));
+
+      response.add(new Artist()
+      .artistName("List Musician 3")
+      .artistGenre("classic")
+      .albumsRecorded(3)
+      .username("List Musician 3"));
+
+      return new ResponseEntity<>(
+        response,
+        HttpStatus.OK
+      );
+    }
+
+  @Override
+  public ResponseEntity<Void> postArtist(@Valid Artist artist) {
+    //insert logic
+    return new ResponseEntity<>(
+      null,
+      HttpStatus.OK
+    );
+  }
+}
+
+```
+
+
+
+### APIを実行してみる
+
+* サーバを起動する
+
+```shell
+./gradlew bootRun
+```
+
+* 各種疎通確認
+
+  * `GET /artists`
+
+    ```shell
+    ❯ http http://localhost:8080/artists                                         ✘ 1 
+    HTTP/1.1 200 
+    Connection: keep-alive
+    Content-Type: application/json
+    Date: Sun, 25 Feb 2024 11:33:42 GMT
+    Keep-Alive: timeout=60
+    Transfer-Encoding: chunked
+    
+    [
+        {
+            "albums_recorded": 1,
+            "artist_genre": "rock",
+            "artist_name": "List Musician 1",
+            "username": "List Musician 1"
+        },
+        {
+            "albums_recorded": 2,
+            "artist_genre": "jazz",
+            "artist_name": "List Musician 2",
+            "username": "List Musician 2"
+        },
+        {
+            "albums_recorded": 3,
+            "artist_genre": "classic",
+            "artist_name": "List Musician 3",
+            "username": "List Musician 3"
+        }
+    ]
+    ```
+
+  * `GET /artists/username`
+
+    ```shell
+    ❯ http http://localhost:8080/artists/username
+    HTTP/1.1 200 
+    Connection: keep-alive
+    Content-Type: application/json
+    Date: Sun, 25 Feb 2024 11:34:20 GMT
+    Keep-Alive: timeout=60
+    Transfer-Encoding: chunked
+    
+    {
+        "albums_recorded": 4,
+        "artist_genre": "rock",
+        "artist_name": "test musician1"
+    }
+    ```
+
+  * `POST /artists`
+
+    ```shell
+    ❯ http post http://localhost:8080/artists artist_name="Rock Musician" artist_genre="rock" albums_recorded:=3 username="Rock Musician"
+    HTTP/1.1 200 
+    Connection: keep-alive
+    Content-Length: 0
+    Date: Sun, 25 Feb 2024 11:34:54 GMT
+    Keep-Alive: timeout=60
+    ```
+
+上記により、全ての実装したAPIのエンドポイントが疎通できた。ここまでで、以下の対応が完了した。
+
+* OpenAPI Generatorを利用してJavaコードの自動生成を行い
+* 自動生成されたコードを継承した`@RestController`を実装し、
+* HTTPクライアントから疎通確認を行う。
+
+
+
+## この先の作業
+
+作業中・・・順次やっていきます笑！
+
+
+
+## その他参考になるメモ
+
 ##### 参考リンク
+
 * [OpenAPI Generatorに適したOpenAPIの書き方](https://techblog.zozo.com/entry/how-to-write-openapi-for-openapi-generator)
+

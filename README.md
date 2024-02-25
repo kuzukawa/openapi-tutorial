@@ -1085,7 +1085,7 @@ plugins {
 * 参考：[OpenAPI Generatorを使ったコードの自動生成とインターフェイスの守り方](https://zenn.dev/angelica/articles/3b7ac906f73638)
 
 ### `gradle.build`に自動生成の設定を追加
-```gradle
+```groovy
 plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.2.2'
@@ -1329,6 +1329,40 @@ components:
               message:
                 type: string
 ```
+
+改めてコードを自動生成しておく。
+
+```shell
+# 自動生成
+./gradlew openApiGenerate
+```
+
+## 生成されたコードを元にAPIを実装する
+
+### [Lombok](https://projectlombok.org/)を導入しておく
+言わずもがな`Setter`や`Getter`を自動生成するライブラリ。利用可能な機能の一覧は[こちら](https://projectlombok.org/features/)を参照。
+
+```groovy
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter'
+  implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.data:spring-data-commons'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+	implementation 'com.google.code.findbugs:jsr305:3.0.2'
+	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+	implementation 'org.openapitools:jackson-databind-nullable:0.2.6'
+
+  implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+  // ----------------- Added lines --------------------
+	implementation 'org.projectlombok:lombok:1.18.30'
+  // ----------------- /Added lines -------------------
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+```
+
 
 ##### 参考リンク
 * [OpenAPI Generatorに適したOpenAPIの書き方](https://techblog.zozo.com/entry/how-to-write-openapi-for-openapi-generator)

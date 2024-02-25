@@ -28,6 +28,8 @@ dependencies {
 
   implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+	implementation 'org.projectlombok:lombok:1.18.30'
   testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 

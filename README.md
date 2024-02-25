@@ -1010,9 +1010,9 @@ dependencies {
 }
 ```
 
-次に、疎通用の`@RestController`として`net.kuzukawa.api.artist.HelloController.java`を作成する。
+次に、疎通用の`@RestController`として`net.kuzukawa.api.artist.controller.HelloController.java`を作成する。
 ```java
-package net.kuzukawa.api.artist;
+package net.kuzukawa.api.artist.controller;
 
 import org.springframework.boot.autoconfigure.*;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -1083,6 +1083,12 @@ plugins {
 ##### 参考リンク
 * 参考：[Generation Gapパターン](https://www.hyuki.com/dp/dpinfo.html#GenerationGap)
 * 参考：[OpenAPI Generatorを使ったコードの自動生成とインターフェイスの守り方](https://zenn.dev/angelica/articles/3b7ac906f73638)
+
+#### 問題点
+
+ただし、現状構成では生成されるコードに不具合が含まれるため、一旦このタイミングではGeneration Gapパターンは利用せずに、Interface Onlyの設定で作業を進める。
+
+
 
 ### `gradle.build`に自動生成の設定を追加
 ```groovy

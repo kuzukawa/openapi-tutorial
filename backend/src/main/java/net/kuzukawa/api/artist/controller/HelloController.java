@@ -1,4 +1,4 @@
-package net.kuzukawa.api.artist;
+package net.kuzukawa.api.artist.controller;
 
 import org.springframework.boot.autoconfigure.*;
 import org.springframework.web.bind.annotation.GetMapping;

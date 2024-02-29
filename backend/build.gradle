@@ -31,6 +31,10 @@ dependencies {
 
 	implementation 'org.projectlombok:lombok:1.18.30'
   testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+	implementation 'javax.persistence:javax.persistence-api:2.2'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
+	runtimeOnly 'com.h2database:h2'
 }
 
 tasks.named('test') {

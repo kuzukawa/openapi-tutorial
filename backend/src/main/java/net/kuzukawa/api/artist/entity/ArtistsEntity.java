@@ -9,7 +9,7 @@ import lombok.*;
 @Entity
 @NoArgsConstructor
 @ToString
-@Table(name = "pet")
+@Table(name = "artists")
 public class ArtistsEntity {
     @Id
     @Column(name = "username", nullable = false, updatable = true)

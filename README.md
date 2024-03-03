@@ -1673,14 +1673,156 @@ http://localhost:8080/h2-console
 ![H2-initial-data](img/h2-database-initial-data.png)
 
 
-## 今後は・・
-作業中・・・順次やっていきます笑！
+## JPAを利用したデータベースアクセス
+ここまできたら最後のステップ。JPAを利用してJavaのコードからH2 Database Engineにアクセスしてみよう。
 
+### 依存関係の追加
+前のステップで追加していたが、以下がJPAに関連する依存関係。
 
+```groovy
+dependencies {
+　.
+　.
+	compileOnly("jakarta.persistence:jakarta.persistence-api:3.1.0")
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+　.
+　.
+}
+```
+
+### Javaのコードを実装していく
+とりあえず、`/artists/{username}` エンドポイントを実装してみよう。このAPIはプライマリキーを受け取って1レコード取得し、レスポンスとして返却するサービスである。
+
+#### @Entity
+`java.net.kuzukawa.api.artist.entity.ArtistsEntity.java`を作成する。
+```java
+package net.kuzukawa.api.artist.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+@AllArgsConstructor
+@Builder
+@Data
+@Entity
+@NoArgsConstructor
+@ToString
+@Table(name = "artists")
+public class ArtistsEntity {
+    @Id
+    @Column(name = "username", nullable = false, updatable = true)
+    private String username;
+
+    @Column(name = "artist_name", nullable = false, length = 255)
+    private String artistName;
+
+    @Column(name = "artist_genre", nullable = false, length = 255)
+    private String artistGenre;
+
+    @Column(name = "albums_recorded", nullable = false)
+    private int albumsRecorded;
+}
+```
+
+#### @Repository
+`java.net.kuzukawa.api.artist.repository.ArtistsRepository.java`を作成する。
+```java
+package net.kuzukawa.api.artist.repository;
+
+import net.kuzukawa.api.artist.entity.ArtistsEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.lang.NonNull;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+@Repository
+public interface ArtistsRepository extends JpaRepository<ArtistsEntity, String> {
+    @NonNull
+    Optional<ArtistsEntity> findById(@NonNull final String username);
+}
+```
+
+#### @Service
+`java.net.kuzukawa.api.artist.service.ArtistsApiService.java`を作成する。
+```java
+package net.kuzukawa.api.artist.service;
+
+import net.kuzukawa.api.artist.entity.ArtistsEntity;
+import net.kuzukawa.api.artist.repository.ArtistsRepository;
+import org.springframework.lang.NonNull;
+import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+
+@Service
+public class ArtistsApiService {
+  private final ArtistsRepository artistsRepository;
+
+  public ArtistsApiService(@NonNull final ArtistsRepository artistsRepository) {
+      this.artistsRepository = artistsRepository;
+  }
+
+  @NonNull
+  public Optional<ArtistsEntity> getById(@NonNull final String username) {
+      return artistsRepository.findById(username);
+  }
+}
+```
+
+#### @Controller
+`java.net.kuzukawa.api.artist.controller.ArtistApiController.java`を修正する。今回は`artists/{username}に該当するメソッドだけを修正する。
+```java
+  @Override
+  public ResponseEntity<GetArtistByUsername200Response> getArtistByUsername(String username) {
+    Optional<ArtistsEntity> oArtistsEntity = artistsApiService.getById(username);
+    if(oArtistsEntity.isEmpty()) {
+      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+    final ArtistsEntity artistsEntity = oArtistsEntity.get();
+    GetArtistByUsername200Response response = new GetArtistByUsername200Response()
+      .artistName(artistsEntity.getArtistName())
+      .artistGenre(artistsEntity.getArtistGenre())
+      .albumsRecorded(artistsEntity.getAlbumsRecorded());
+
+    return new ResponseEntity<>(
+            response,
+            HttpStatus.OK);
+  }
+```
+
+ここまででJavaの実装は完了。
+
+### サーバ起動と疎通確認
+* サーバ起動
+```shell
+./gradlew bootRun -Dprofiles.active=local
+```
+
+* 疎通確認
+```shell
+❯ http localhost:8080/artists/Eminem
+HTTP/1.1 200 
+Connection: keep-alive
+Content-Type: application/json
+Date: Sun, 03 Mar 2024 08:40:27 GMT
+Keep-Alive: timeout=60
+Transfer-Encoding: chunked
+
+{
+    "albums_recorded": 11,
+    "artist_genre": "hiphop",
+    "artist_name": "Eminem"
+}
+```
+無事に初期データをAPI経由で取得することができた。
+
+## 今後のやること
+時間があれば、残りのエンドポイントの実装も追記していきます！！
 
 ## その他参考になるメモ
 
-##### 参考リンク
+### 参考リンク
 
 * [OpenAPI Generatorに適したOpenAPIの書き方](https://techblog.zozo.com/entry/how-to-write-openapi-for-openapi-generator)
 

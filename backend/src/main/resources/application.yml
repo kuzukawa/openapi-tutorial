@@ -1,6 +1,8 @@
 spring:
-  profiles:
-    group:
-      local:
-        - common
-        - local
+  jpa:
+    hibernate:
+      ddl-auto: none
+  group:
+    local:
+      - common
+      - local

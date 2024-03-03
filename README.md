@@ -1634,6 +1634,24 @@ INSERT INTO ARTISTS VALUES ('Eminem', 'Eminem','hiphop',11);
 INSERT INTO ARTISTS VALUES ('mozart', 'mozart','classic',99);
 ```
 
+### `spring.jpa.hibernate.ddl-auto`の見直し
+この設定をうまく使うとコードを元にデータベーススキーマを生成することができる。ただし、今回はすでにDDLを作成してしまっているので、この機能は無効化しておく。（詳細な原因は調査していないが、この設定を明記しないと、何らかのDDL作成処理が動いてしまい、テーブルは構築されるものの初期データがセットされない、という事象が発生した。おそらく、H2がテーブル作成・初期データロードしたのちに、hibernateがテーブルを再作成してしまっているものと思われる。
+
+本設定は今回は環境を問わず設定したいので、`application.yml`に以下の設定を追加する。
+
+```yaml
+spring:
+  // ----------- Add line --------------
+  jpa:
+    hibernate:
+      ddl-auto: none
+  // ----------- Add line --------------
+  group:
+    local:
+      - common
+      - local
+```
+
 ### アプリケーション起動
 この状態でアプリケーションを起動するとDBも合わせて起動され、アプリケーションからDBが参照できるようになる。SpringBootのprofile機能を利用することになるため、Gradle経由でアプリケーションを起動する場合は以下のようにして起動する。
 
@@ -1649,6 +1667,11 @@ http://localhost:8080/h2-console
 以下のようなログイン画面が表示できたら、無事にH2 Database Engineは起動できていることになる。
 
 ![H2-login](img/h2-database-login.png)
+
+初期データも以下のようにロードされていれば問題なし。
+
+![H2-initial-data](img/h2-database-initial-data.png)
+
 
 ## 今後は・・
 作業中・・・順次やっていきます笑！

@@ -1363,7 +1363,11 @@ dependencies {
 	implementation 'com.fasterxml.jackson.core:jackson-databind'
 
   // ----------------- Added lines --------------------
-	implementation 'org.projectlombok:lombok:1.18.30'
+	compileOnly 'org.projectlombok:lombok:1.18.30'
+	annotationProcessor 'org.projectlombok:lombok:1.18.30'
+
+	testCompileOnly 'org.projectlombok:lombok:1.18.30'
+	testAnnotationProcessor 'org.projectlombok:lombok:1.18.30'
   // ----------------- /Added lines -------------------
   testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }

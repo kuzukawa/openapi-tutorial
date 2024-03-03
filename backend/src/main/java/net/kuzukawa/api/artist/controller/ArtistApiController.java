@@ -2,29 +2,43 @@ package net.kuzukawa.api.artist.controller;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import net.kuzukawa.api.artist.api.ArtistsApi;
+import net.kuzukawa.api.artist.entity.ArtistsEntity;
 import net.kuzukawa.api.artist.model.Artist;
 import net.kuzukawa.api.artist.model.GetArtistByUsername200Response;
+import net.kuzukawa.api.artist.service.ArtistsApiService;
 
 @RestController
 public class ArtistApiController implements ArtistsApi {
+  private final ArtistsApiService artistsApiService;
+
+  public ArtistApiController(@NonNull final ArtistsApiService artistsApiService) {
+    this.artistsApiService = artistsApiService;
+  }
+
   @Override
   public ResponseEntity<GetArtistByUsername200Response> getArtistByUsername(String username) {
+    Optional<ArtistsEntity> oArtistsEntity = artistsApiService.getById(username);
+    if(oArtistsEntity.isEmpty()) {
+      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+    final ArtistsEntity artistsEntity = oArtistsEntity.get();
     GetArtistByUsername200Response response = new GetArtistByUsername200Response()
-      .artistName("test musician1")
-      .artistGenre("rock")
-      .albumsRecorded(4);
+      .artistName(artistsEntity.getArtistName())
+      .artistGenre(artistsEntity.getArtistGenre())
+      .albumsRecorded(artistsEntity.getAlbumsRecorded());
 
-      return new ResponseEntity<>(
-        response,
-        HttpStatus.OK
-      );
+    return new ResponseEntity<>(
+            response,
+            HttpStatus.OK);
   }
 
   @Override

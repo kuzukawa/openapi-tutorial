@@ -1530,8 +1530,127 @@ public class ArtistApiController implements ArtistsApi {
 
 
 
-## この先の作業
+## ローカル開発できるDB環境を構築しよう
 
+ローカル環境でDBを利用した開発をできるようにしていく。コンセプトは以下の通り。
+* 手元で簡単に開発することを目的として[H2 Database Engine](https://www.h2database.com/html/main.html)を利用する
+* JavaからのDBアクセスは[Java Persistense API(JPA)](https://ja.wikipedia.org/wiki/Java_Persistence_API)を利用する
+
+### H2 Database Engineの導入
+`build.grale`に依存関係を追加する。
+
+```groovy
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter'
+  implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.data:spring-data-commons'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+	implementation 'com.google.code.findbugs:jsr305:3.0.2'
+	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+	implementation 'org.openapitools:jackson-databind-nullable:0.2.6'
+
+  implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+	compileOnly 'org.projectlombok:lombok:1.18.30'
+	annotationProcessor 'org.projectlombok:lombok:1.18.30'
+
+	testCompileOnly 'org.projectlombok:lombok:1.18.30'
+	testAnnotationProcessor 'org.projectlombok:lombok:1.18.30'
+
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+  // ----------- Add line --------------
+	compileOnly("jakarta.persistence:jakarta.persistence-api:3.1.0")
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	runtimeOnly 'com.h2database:h2'
+  // ----------- /Add line -------------
+}
+```
+次に設定ファイルを修正する。環境ごとに設定ファイルを分けて用意した方が良いので、以下の構造で設定ファイルと初期データファイルを用意する。
+```shell
+backend
+└── src
+    └── main
+        └── resources
+            ├── application-common.yml # 共通設定ファイル
+            ├── application-local.yml  # ローカル環境用設定ファイル
+            ├── application.yml        # 大本の環境設定ファイル
+            ├── data.sql               # データファイル(DML)
+            └── schema.sql             # テーブル情報(DDL)
+```
+各設定ファイルの記載内容は以下の通り。
+* `application.yml`
+  ```yaml
+  spring:
+  profiles:
+    group:
+      local:
+        - common
+        - local
+  ```
+* `application-common.yml`
+  ```yaml
+  //NOP(今の所空ファイル)
+  ```
+* `application-local.yml`
+  ```yaml
+  spring:
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:artistsdb
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  sql:
+    init:
+      mode: always
+  ```
+ここまでで、SpringBootアプリケーションからH2Databaseに接続するところまでの設定が完了した。JPAを利用することにより、本番環境で異なるDBを利用する場合でも `driver-class-name`を差し替えればそのまま動作する！という戦略。
+
+### データファイルを準備する
+H2 Databaseは上記設定では揮発性DB(プロセスが終了したらデータも全て失われる)となっている。そのため、アプリケーション起動のたびにDBのセットアップ(テーブル作成、データ投入)を行わなければならない。以下の通り、それぞれスキーマとデータを準備しよう。
+
+* `schema.sql`
+```sql
+DROP TABLE IF EXISTS ARTISTS;
+
+CREATE TABLE ARTISTS (
+    USERNAME VARCHAR(255) NOT NULL PRIMARY KEY,
+    ARTIST_NAME VARCHAR(255) NOT NULL,
+    ARTIST_GENRE VARCHAR(255) NOT NULL,
+    ALBUMS_RECORDED INT NOT NULL
+);
+```
+
+* `data.sql`
+```sql
+INSERT INTO ARTISTS VALUES ('kuzukawa', 'kuzukawas','rock',2);
+INSERT INTO ARTISTS VALUES ('Eminem', 'Eminem','hiphop',11);
+INSERT INTO ARTISTS VALUES ('mozart', 'mozart','classic',99);
+```
+
+### アプリケーション起動
+この状態でアプリケーションを起動するとDBも合わせて起動され、アプリケーションからDBが参照できるようになる。SpringBootのprofile機能を利用することになるため、Gradle経由でアプリケーションを起動する場合は以下のようにして起動する。
+
+```shell
+./gradlew bootRun --args='--spring.profiles.active=local'
+```
+
+### DBの確認
+起動したらブラウザを利用して以下のURLを参照してみる。
+```shell
+http://localhost:8080/h2-console
+```
+以下のようなログイン画面が表示できたら、無事にH2 Database Engineは起動できていることになる。
+
+![H2-login](img/h2-database-login.png)
+
+## 今後は・・
 作業中・・・順次やっていきます笑！
 
 

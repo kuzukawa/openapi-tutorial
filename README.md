@@ -1796,7 +1796,7 @@ public class ArtistsApiService {
 ### サーバ起動と疎通確認
 * サーバ起動
 ```shell
-./gradlew bootRun -Dprofiles.active=local
+./gradlew bootRun --args='--spring.profiles.active=local'
 ```
 
 * 疎通確認
